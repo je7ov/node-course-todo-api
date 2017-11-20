@@ -20,13 +20,14 @@ app.post('/todos', (req, res) => {
     text: req.body.text
   });
 
-  todo.save()
-  .then((doc) => {
-      res.send(doc);
-    })
-    .catch((err) => {
-      res.status(400).send(err);
-    });
+  todo
+    .save()
+    .then((todo) => {
+        res.send({ todo });
+      })
+      .catch((err) => {
+        res.status(400).send(err);
+      });
 });
 
 app.get('/todos', (req, res) => {
@@ -107,6 +108,23 @@ app.patch('/todos/:id', (req, res) => {
       res.status(400).send({ error: err });
     });
 });
+
+app.post('/users', (req, res) => {
+  const body = _.pick(req.body, [ 'email', 'password' ]);
+  const user = new User(body);
+
+  user
+    .save()
+    .then(() => {
+      return user.generateAuthToken();
+    })
+    .then((token) => {
+      res.header('x-auth', token).send(user);
+    })
+    .catch((err) => {
+      res.status(400).send({ error: err });
+    })
+})
 
 app.listen(port, () => {
   console.log(`Server started on port ${port}`);

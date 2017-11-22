@@ -298,3 +298,69 @@ describe('GET /users/me', () => {
       .end(done);
   });
 });
+
+/* -------------------- */
+/*   POST /users/login  */
+/* -------------------- */
+
+describe('POST /users/login', () => {
+  it('should login user and return auth token', (done) => {
+    const user = seed.users[1];
+
+    request(app)
+      .post('/users/login')
+      .send({
+        email: user.email,
+        password: user.password
+      })
+      .expect(200)
+      .expect((res) => {
+        expect(res.body._id).toBe(user._id.toHexString());
+        expect(res.body.email).toBe(user.email);
+        expect(res.header['x-auth']).toBeTruthy();
+      })
+      .end((err, res) => {
+        if (err) {
+          done(err);
+        }
+
+        User
+          .findById(user._id)
+          .then((user) => {
+            expect(user.tokens[0]).toEqual(expect.objectContaining({
+                access: 'auth',
+                token: res.header['x-auth']
+              })
+            );
+            done();
+          })
+          .catch((err) => {
+            done(err);
+          });
+      });
+  });
+
+  it('should reject invalid login', (done) => {
+    const user = seed.users[1];
+
+    request(app)
+      .post('/users/login')
+      .send({
+        email: user.email,
+        password: user.password + "1"
+      })
+      .expect(400)
+      .expect((res) => {
+        expect(res.header['x-auth']).toBeFalsy();
+        User
+          .findById(user._id)
+          .then((user) => {
+            expect(user.tokens.length).toBe(0);
+          })
+          .catch((err) => {
+            done(err);
+          });
+      })
+      .end(done);
+  });
+});

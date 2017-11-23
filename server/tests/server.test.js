@@ -299,6 +299,34 @@ describe('GET /users/me', () => {
   });
 });
 
+/* ---------------------- */
+/* DELETE /users/me/token */
+/* ---------------------- */
+
+describe('DELETE /users/me/token', () => {
+  it('should remove valid auth token', (done) => {
+    const user = seed.users[0];
+
+    request(app)
+      .delete('/users/me/token')
+      .set('x-auth', user.tokens[0].token)
+      .expect(200)
+      .expect(() => {
+        User
+          .findById(user._id)
+          .then((userResult) => {
+            expect(userResult.tokens).not.toEqual(expect.objectContaining({
+              token: user.tokens[0].token
+            }))
+          })
+          .catch((err) => {
+            done(err);
+          });
+      })
+      .end(done);
+  });
+});
+
 /* -------------------- */
 /*   POST /users/login  */
 /* -------------------- */
